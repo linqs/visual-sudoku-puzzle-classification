@@ -3,6 +3,9 @@ Handle the standard variants for dataset generation.
 """
 
 import abc
+import copy
+
+import puzzles
 
 # Will be added to as the strategies are defined.
 _strategies = []
@@ -27,9 +30,6 @@ class BaseStrategy(abc.ABC):
     def __init__(self, name):
         self.name = name
 
-        self.dimension = None
-        self.datasets = None
-
     def __init_subclass__(cls, **kwargs):
         _strategies.append(cls())
 
@@ -43,13 +43,15 @@ class BaseStrategy(abc.ABC):
 
         pass
 
-    def newSplit(self, dimension, datasets):
+    @abc.abstractmethod
+    def generateSplit(self, dimension, datasets, numTrain, numTest, numValid):
         """
-        Prepare for a new split.
+        Create a new split using the class' specific strategy.
+        Returns three tuples: train, test, and valid.
+        Each tuple has two elements: visual puzzles, label puzzles.
         """
 
-        self.dimension = dimension
-        self.datasets = datasets
+        pass
 
     def __repr__(self):
         return self.name
@@ -58,17 +60,40 @@ class SimpleStrategy(BaseStrategy):
     def __init__(self):
         super().__init__('simple')
 
-        self.labels = None
-
     def validate(self, arguments):
         if (len(arguments.datasetNames) != 1):
             raise ValueError(
                     "%s (%s) can only be used with a single dataset, found [%s]." %
                     (type(self).__name__, self.name, ', '.join(arguments.datasetNames)))
 
-    def newSplit(self, dimension, datasets):
-        super().newSplit(dimension, datasets)
-
+    def generateSplit(self, dimension, datasets, numTrain, numTest, numValid):
         datasetName = list(datasets.keys())[0]
-        labels = datasets[datasetName]['labels']
-        self.labels = labels[0:dimension]
+
+        # Choose the first |dimension| labels.
+        labels = datasets[datasetName]['labels'][0:dimension]
+
+        train = {
+            'images': [],
+            'cellLabels': [],
+            'labels': [],
+            'notes': [],
+        }
+        test = copy.deepcopy(train)
+        valid = copy.deepcopy(train)
+
+        splits = [
+            [train, numTrain, datasets[datasetName]['train']],
+            [test, numTest, datasets[datasetName]['test']],
+            [valid, numValid, datasets[datasetName]['valid']]
+        ]
+
+        for (split, count, examples) in splits:
+            for i in range(count):
+                puzzleImages, puzzleCellLabels = puzzles.generatePuzzle(dimension, labels, examples)
+
+                split['images'].append(puzzleImages)
+                split['cellLabels'].append(puzzleCellLabels)
+                split['labels'].append(puzzles.PUZZLE_LABEL_CORRECT)
+                split['notes'].append([puzzles.PUZZLE_NOTE_CORRRECT])
+
+        return train, test, valid

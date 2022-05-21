@@ -3,15 +3,16 @@
 # Generate a split of puzzles.
 
 import argparse
+import datetime
+import json
 import os
 import random
 import shutil
 import sys
 
-import numpy
-
 import datasets
 import strategies
+import puzzles
 import util
 
 DEFAULT_DATASET = datasets.DATASET_MNIST
@@ -29,60 +30,48 @@ DEFAULT_TRAIN_PERCENT = 0.5
 SUBPATH_FORMAT = os.path.join('dimension::{:01d}', 'datasets::{:s}', 'strategy::{:s}', 'numTrain::{:05d}', 'numTest::{:05d}', 'numValid::{:05d}', 'overlap::{:04.2f}', 'split::{:s}')
 OPTIONS_FILENAME = 'options.json'
 
-def addOverlap(examples, overlapPercent):
-    if (overlapPercent <= 0.0):
-        return
+CELL_LABELS_FILENAME = 'cell_labels.txt'
+PUZZLE_PIXELS_FILENAME = 'puzzle_pixels.txt'
+PUZZLE_LABELS_FILENAME = 'puzzle_labels.txt'
+PUZZLE_NOTES_FILENAME = 'puzzle_notes.txt'
 
-    for label in examples:
-        overlapCount = int(len(examples[label]) * overlapPercent)
-        overlap = random.choices(examples[label], k = overlapCount)
-        examples[label].extend(overlap)
-        random.shuffle(examples[label])
+def writeData(outDir, puzzles, prefix):
+    basePath = os.path.join(outDir, prefix)
 
-def fetchData(dimension, datasetName, overlapPercent,
-        numTest, numTrain, numValid):
-    allExamples, allowedLabels = datasets.loadMNIST(datasetName)
+    images = []
+    cellLabels = []
 
-    trainExamples = {}
-    testExamples = {}
-    validExamples = {}
+    # Flatten the puzzles for writing.
+    for i in range(len(puzzles['labels'])):
+        images.append([pixel for row in puzzles['images'][i] for cell in row for pixel in cell])
+        cellLabels.append([cell for row in puzzles['cellLabels'][i] for cell in row])
 
-    usedExamples = 0
-
-    for (examples, count) in [(trainExamples, numTrain), (testExamples, numTest), (validExamples, numValid)]:
-        for label in allExamples:
-            examples[label] = allExamples[label][usedExamples:(usedExamples + count)]
-        usedExamples += count
-
-    for examples in [trainExamples, testExamples, validExamples]:
-        addOverlap(examples, overlapPercent)
-
-    return allowedLabels, util.ExampleChooser(trainExamples), util.ExampleChooser(testExamples), util.ExampleChooser(validExamples)
+    util.writeRows(basePath + '_' + PUZZLE_PIXELS_FILENAME, images)
+    util.writeRows(basePath + '_' + CELL_LABELS_FILENAME, cellLabels)
+    util.writeRows(basePath + '_' + PUZZLE_LABELS_FILENAME, puzzles['labels'])
+    util.writeRows(basePath + '_' + PUZZLE_NOTES_FILENAME, puzzles['notes'])
 
 def generateSplit(outDir, seed,
         dimension, datasetNames, 
-        numTest, numTrain, numValid,
+        numTrain, numTest, numValid,
         overlapPercent, strategy):
     random.seed(seed)
-    numpy.random.seed(seed)
 
-    datasets = {}
-
+    data = {}
     for datasetName in datasetNames:
-        labels, trainExamples, testExamples, validExamples = fetchData(dimension, datasetName, overlapPercent, numTest, numTrain, numValid)
-        datasets[datasetName] = {
+        labels, trainExamples, testExamples, validExamples = datasets.fetchData(dimension, datasetName, overlapPercent, numTrain, numTest, numValid)
+        data[datasetName] = {
             'labels': labels,
             'train': trainExamples,
             'test': testExamples,
             'valid': validExamples,
         }
 
-    strategy.newSplit(dimension, datasets)
+    train, test, valid = strategy.generateSplit(dimension, data, numTrain, numTest, numValid)
 
-    print('TEST')
-    print(datasets)
-    print(strategy)
-    print(strategy.labels)
+    writeData(outDir, train, 'train')
+    writeData(outDir, test, 'test')
+    writeData(outDir, valid, 'valid')
 
 def main(arguments):
     subpath = SUBPATH_FORMAT.format(
@@ -104,14 +93,33 @@ def main(arguments):
             return
 
         print("Found existing options file, but forcing over it. " + optionsPath)
-        shutil.rmtree(DATA_DIR.format(subpath))
+        shutil.rmtree(outDir)
+
     print("Generating data defined in: " + optionsPath)
+    os.makedirs(outDir, exist_ok = True)
 
     generateSplit(
             outDir, arguments.seed,
             arguments.dimension, arguments.datasetNames, 
-            arguments.numTest, arguments.numTrain, arguments.numValid,
+            arguments.numTrain, arguments.numTest, arguments.numValid,
             arguments.overlapPercent, arguments.strategy)
+
+    options = {
+        'dimension': arguments.dimension,
+        'datasets': arguments.datasetNames,
+        'strategy': str(arguments.strategy),
+        'numTrain': arguments.numTrain,
+        'numTest': arguments.numTest,
+        'numValid': arguments.numValid,
+        'overlap': arguments.overlapPercent,
+        'splitId': arguments.split,
+        'seed': arguments.seed,
+        'timestamp': str(datetime.datetime.now()),
+        'generator': os.path.basename(os.path.realpath(__file__)),
+    }
+
+    with open(optionsPath, 'w') as file:
+        json.dump(options, file, indent = 4)
 
 def _load_args():
     parser = argparse.ArgumentParser(description = 'Generate custom visual sudoku puzzles.')
