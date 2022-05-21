@@ -8,7 +8,7 @@ import numpy
 
 DATASET_MNIST = 'mnist'
 DATASET_EMNIST = 'emnist'
-DATASET_KMNIST = 'knist'
+DATASET_KMNIST = 'kmnist'
 DATASET_FMNIST = 'fashion_mnist'
 
 DATASETS = [DATASET_MNIST, DATASET_EMNIST, DATASET_KMNIST, DATASET_FMNIST]
@@ -56,7 +56,7 @@ def loadMNIST(name = DATASET_MNIST, shuffle = True):
             random.shuffle(examples[label])
             random.shuffle(examples[label])
 
-    return examples
+    return examples, labels
 
 def _normalizeMNISTImages(images):
     (numImages, width, height) = images.shape

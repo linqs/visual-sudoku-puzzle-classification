@@ -11,11 +11,11 @@ import sys
 import numpy
 
 import datasets
+import strategies
+import util
 
 DEFAULT_DATASET = datasets.DATASET_MNIST
-
-STRATEGIES = ['base']
-DEFAULT_STRATEGY = 'base'
+DEFAULT_STRATEGY = strategies.getStrategies()[0]
 
 DEFAULT_PUZZLE_DIM = 4
 DEFAULT_NUM_TRAIN = 100
@@ -29,28 +29,6 @@ DEFAULT_TRAIN_PERCENT = 0.5
 SUBPATH_FORMAT = os.path.join('dimension::{:01d}', 'datasets::{:s}', 'strategy::{:s}', 'numTrain::{:05d}', 'numTest::{:05d}', 'numValid::{:05d}', 'overlap::{:04.2f}', 'split::{:s}')
 OPTIONS_FILENAME = 'options.json'
 
-class ExampleChooser(object):
-    '''
-    An object for controlling exactly how many instances of each label are used to create puzzles.
-    '''
-
-    # examples: {label: [image, ...], ...}
-    def __init__(self, examples):
-        self._examples = examples
-        self._nextIndexes = {label: 0 for label in examples}
-
-    # Takes (consumes) the next example for a label.
-    def takeExample(self, label):
-        assert(self._nextIndexes[label] < len(self._examples[label]))
-
-        image = self._examples[label][self._nextIndexes[label]]
-        self._nextIndexes[label] += 1
-        return image
-
-    # Get a example randomly from anywhere in the sequence.
-    def getExample(self, label):
-        return random.choice(self._examples[label])
-
 def addOverlap(examples, overlapPercent):
     if (overlapPercent <= 0.0):
         return
@@ -63,7 +41,7 @@ def addOverlap(examples, overlapPercent):
 
 def fetchData(dimension, datasetName, overlapPercent,
         numTest, numTrain, numValid):
-    allExamples = datasets.loadMNIST(datasetName)
+    allExamples, allowedLabels = datasets.loadMNIST(datasetName)
 
     trainExamples = {}
     testExamples = {}
@@ -79,7 +57,7 @@ def fetchData(dimension, datasetName, overlapPercent,
     for examples in [trainExamples, testExamples, validExamples]:
         addOverlap(examples, overlapPercent)
 
-    return ExampleChooser(trainExamples), ExampleChooser(testExamples), ExampleChooser(validExamples)
+    return allowedLabels, util.ExampleChooser(trainExamples), util.ExampleChooser(testExamples), util.ExampleChooser(validExamples)
 
 def generateSplit(outDir, seed,
         dimension, datasetNames, 
@@ -91,21 +69,26 @@ def generateSplit(outDir, seed,
     datasets = {}
 
     for datasetName in datasetNames:
-        trainExamples, testExamples, validExamples = fetchData(dimension, datasetName, overlapPercent, numTest, numTrain, numValid)
+        labels, trainExamples, testExamples, validExamples = fetchData(dimension, datasetName, overlapPercent, numTest, numTrain, numValid)
         datasets[datasetName] = {
+            'labels': labels,
             'train': trainExamples,
             'test': testExamples,
             'valid': validExamples,
         }
 
+    strategy.newSplit(dimension, datasets)
+
     print('TEST')
     print(datasets)
+    print(strategy)
+    print(strategy.labels)
 
 def main(arguments):
     subpath = SUBPATH_FORMAT.format(
             arguments.dimension,
             ','.join(arguments.datasetNames),
-            arguments.strategy,
+            str(arguments.strategy),
             arguments.numTrain,
             arguments.numTest,
             arguments.numValid,
@@ -171,8 +154,8 @@ def _load_args():
         help = 'An identifier for this split.')
 
     parser.add_argument('--strategy', dest = 'strategy',
-        action = 'store', type = str, default = DEFAULT_STRATEGY,
-        choices = ['base'],
+        action = 'store', type = str, default = str(DEFAULT_STRATEGY),
+        choices = list(map(str, strategies.getStrategies())),
         help = 'The strategy to use when creating puzzles.')
 
     parser.add_argument('--out-dir', dest = 'outDir',
@@ -205,6 +188,9 @@ def _load_args():
 
     if (arguments.seed is None):
         arguments.seed = random.randrange(2 ** 32)
+
+    arguments.strategy = strategies.getStrategy(arguments.strategy)
+    arguments.strategy.validate(arguments)
 
     return arguments
 
