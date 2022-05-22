@@ -134,11 +134,11 @@ class SimpleStrategy(BaseStrategy):
 
 class RandomSplitStrategy(BaseStrategy):
     """
-    Choose |dimension| random classes from all datasets.
+    Choose |dimension| random classes from all datasets for the entire split.
     """
 
     def __init__(self):
-        super().__init__('split')
+        super().__init__('r_split')
 
     def generateSplit(self, dimension, data, numTrain, numTest, numValid):
         labels, trainExamples, testExamples, validExamples = self._mergeDatasets(data)
@@ -147,6 +147,45 @@ class RandomSplitStrategy(BaseStrategy):
 
         return self._generateSplit(dimension, numTrain, numTest, numValid, labels,
                 trainExamples, testExamples, validExamples)
+
+class RandomPuzzleStrategy(BaseStrategy):
+    """
+    Choose |dimension| random classes from all datasets for each puzzle.
+    """
+
+    def __init__(self):
+        super().__init__('r_puzzle')
+
+    def generateSplit(self, dimension, data, numTrain, numTest, numValid):
+        baseLabels, trainExamples, testExamples, validExamples = self._mergeDatasets(data)
+
+        train = {
+            'images': [],
+            'cellLabels': [],
+            'labels': [],
+            'notes': [],
+        }
+        test = copy.deepcopy(train)
+        valid = copy.deepcopy(train)
+
+        splits = [
+            [train, numTrain, trainExamples],
+            [test, numTest, testExamples],
+            [valid, numValid, validExamples],
+        ]
+
+        for (split, count, examples) in splits:
+            for i in range(count):
+                labels = random.sample(baseLabels, k = dimension)
+
+                puzzleImages, puzzleCellLabels = puzzles.generatePuzzle(dimension, labels, examples)
+
+                split['images'].append(puzzleImages)
+                split['cellLabels'].append(puzzleCellLabels)
+                split['labels'].append(puzzles.PUZZLE_LABEL_CORRECT)
+                split['notes'].append([puzzles.PUZZLE_NOTE_CORRRECT])
+
+        return train, test, valid
 
 class TransferStrategy(BaseStrategy):
     """
