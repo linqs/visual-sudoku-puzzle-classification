@@ -45,7 +45,7 @@ class BaseStrategy(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def generateSplit(self, dimension, data, numTrain, numTest, numValid):
+    def generateSplit(self, dimension, data, corruptChance, numTrain, numTest, numValid):
         """
         Create a new split using the class' specific strategy.
         Returns three tuples: train, test, and valid.
@@ -54,7 +54,7 @@ class BaseStrategy(abc.ABC):
 
         pass
 
-    def _generateSplit(self, dimension, numTrain, numTest, numValid,
+    def _generateSplit(self, dimension, corruptChance, numTrain, numTest, numValid,
             labels, trainExamples, testExamples, validExamples):
         """
         A common base for generating splits.
@@ -77,12 +77,23 @@ class BaseStrategy(abc.ABC):
 
         for (split, count, examples) in splits:
             for i in range(count):
+                # Generate a correct puzzle.
+
                 puzzleImages, puzzleCellLabels = puzzles.generatePuzzle(dimension, labels, examples)
 
                 split['images'].append(puzzleImages)
                 split['cellLabels'].append(puzzleCellLabels)
                 split['labels'].append(puzzles.PUZZLE_LABEL_CORRECT)
                 split['notes'].append([puzzles.PUZZLE_NOTE_CORRRECT])
+
+                # Corrupt a puzzle.
+
+                corruptImages, corruptCellLabels, corruptNote = puzzles.corruptPuzzle(dimension, labels, examples, puzzleImages, puzzleCellLabels, corruptChance)
+
+                split['images'].append(corruptImages)
+                split['cellLabels'].append(corruptCellLabels)
+                split['labels'].append(puzzles.PUZZLE_LABEL_INCORRECT)
+                split['notes'].append([corruptNote])
 
         return train, test, valid
 
@@ -122,14 +133,14 @@ class SimpleStrategy(BaseStrategy):
                     "%s (%s) can only be used with a single dataset, found [%s]." %
                     (type(self).__name__, self.name, ', '.join(arguments.datasetNames)))
 
-    def generateSplit(self, dimension, data, numTrain, numTest, numValid):
+    def generateSplit(self, dimension, data, corruptChance, numTrain, numTest, numValid):
         datasetName = list(data.keys())[0]
         dataset = data[datasetName]
 
         # Choose the first |dimension| labels.
         labels = dataset['labels'][0:dimension]
 
-        return self._generateSplit(dimension, numTrain, numTest, numValid, labels,
+        return self._generateSplit(dimension, corruptChance, numTrain, numTest, numValid, labels,
                 dataset['train'], dataset['test'], dataset['valid'])
 
 class RandomSplitStrategy(BaseStrategy):
@@ -140,12 +151,12 @@ class RandomSplitStrategy(BaseStrategy):
     def __init__(self):
         super().__init__('r_split')
 
-    def generateSplit(self, dimension, data, numTrain, numTest, numValid):
+    def generateSplit(self, dimension, data, corruptChance, numTrain, numTest, numValid):
         labels, trainExamples, testExamples, validExamples = self._mergeDatasets(data)
 
         labels = random.sample(labels, k = dimension)
 
-        return self._generateSplit(dimension, numTrain, numTest, numValid, labels,
+        return self._generateSplit(dimension, corruptChance, numTrain, numTest, numValid, labels,
                 trainExamples, testExamples, validExamples)
 
 class RandomPuzzleStrategy(BaseStrategy):
@@ -156,7 +167,7 @@ class RandomPuzzleStrategy(BaseStrategy):
     def __init__(self):
         super().__init__('r_puzzle')
 
-    def generateSplit(self, dimension, data, numTrain, numTest, numValid):
+    def generateSplit(self, dimension, data, corruptChance, numTrain, numTest, numValid):
         baseLabels, trainExamples, testExamples, validExamples = self._mergeDatasets(data)
 
         train = {
@@ -178,12 +189,23 @@ class RandomPuzzleStrategy(BaseStrategy):
             for i in range(count):
                 labels = random.sample(baseLabels, k = dimension)
 
+                # Generate a correct puzzle.
+
                 puzzleImages, puzzleCellLabels = puzzles.generatePuzzle(dimension, labels, examples)
 
                 split['images'].append(puzzleImages)
                 split['cellLabels'].append(puzzleCellLabels)
                 split['labels'].append(puzzles.PUZZLE_LABEL_CORRECT)
                 split['notes'].append([puzzles.PUZZLE_NOTE_CORRRECT])
+
+                # Corrupt a puzzle.
+
+                corruptImages, corruptCellLabels, corruptNote = puzzles.corruptPuzzle(dimension, labels, examples, puzzleImages, puzzleCellLabels, corruptChance)
+
+                split['images'].append(corruptImages)
+                split['cellLabels'].append(corruptCellLabels)
+                split['labels'].append(puzzles.PUZZLE_LABEL_INCORRECT)
+                split['notes'].append([corruptNote])
 
         return train, test, valid
 
@@ -195,10 +217,10 @@ class RandomCellStrategy(BaseStrategy):
     def __init__(self):
         super().__init__('r_cell')
 
-    def generateSplit(self, dimension, data, numTrain, numTest, numValid):
+    def generateSplit(self, dimension, data, corruptChance, numTrain, numTest, numValid):
         labels, trainExamples, testExamples, validExamples = self._mergeDatasets(data)
 
-        return self._generateSplit(dimension, numTrain, numTest, numValid, labels,
+        return self._generateSplit(dimension, corruptChance, numTrain, numTest, numValid, labels,
                 trainExamples, testExamples, validExamples)
 
 class TransferStrategy(BaseStrategy):
@@ -224,7 +246,7 @@ class TransferStrategy(BaseStrategy):
                     "%s (%s) does not have enough labels. Need %d, found %d." %
                     (type(self).__name__, self.name, (arguments.dimension * 2), datasets.NUM_LABELS[datasetName]))
 
-    def generateSplit(self, dimension, data, numTrain, numTest, numValid):
+    def generateSplit(self, dimension, data, corruptChance, numTrain, numTest, numValid):
         datasetName = list(data.keys())[0]
         dataset = data[datasetName]
 
@@ -234,7 +256,7 @@ class TransferStrategy(BaseStrategy):
         trainLabels = labels[0:dimension]
         testLabels = labels[dimension:(dimension * 2)]
 
-        train, _, _ = self._generateSplit(dimension, numTrain, 0, 0, trainLabels, dataset['train'], None, None)
+        train, _, _ = self._generateSplit(dimension, corruptChance, numTrain, 0, 0, trainLabels, dataset['train'], None, None)
         _, test, valid = self._generateSplit(dimension, 0, numTest, numValid, testLabels, None, dataset['test'], dataset['valid'])
 
         return train, test, valid

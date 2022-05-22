@@ -18,6 +18,7 @@ import util
 DEFAULT_DATASET = datasets.DATASET_MNIST
 DEFAULT_STRATEGY = strategies.getStrategies()[0]
 
+DEFAULT_CORRUPT_CHANCE = 0.5
 DEFAULT_PUZZLE_DIM = 4
 DEFAULT_NUM_TRAIN = 100
 DEFAULT_NUM_TEST = 100
@@ -27,7 +28,9 @@ DEFAULT_OVERLAP_PERCENT = 0.0
 DEFAULT_SPLIT = '00'
 DEFAULT_TRAIN_PERCENT = 0.5
 
-SUBPATH_FORMAT = os.path.join('dimension::{:01d}', 'datasets::{:s}', 'strategy::{:s}', 'numTrain::{:05d}', 'numTest::{:05d}', 'numValid::{:05d}', 'overlap::{:04.2f}', 'split::{:s}')
+SUBPATH_FORMAT = os.path.join('dimension::{:01d}', 'datasets::{:s}', 'strategy::{:s}',
+        'numTrain::{:05d}', 'numTest::{:05d}', 'numValid::{:05d}',
+        'corruptChance::{:04.2f}', 'overlap::{:04.2f}', 'split::{:s}')
 OPTIONS_FILENAME = 'options.json'
 
 CELL_LABELS_FILENAME = 'cell_labels.txt'
@@ -54,7 +57,7 @@ def writeData(outDir, puzzles, prefix):
 def generateSplit(outDir, seed,
         dimension, datasetNames, 
         numTrain, numTest, numValid,
-        overlapPercent, strategy):
+        corruptChance, overlapPercent, strategy):
     random.seed(seed)
 
     data = {}
@@ -67,7 +70,7 @@ def generateSplit(outDir, seed,
             'valid': validExamples,
         }
 
-    train, test, valid = strategy.generateSplit(dimension, data, numTrain, numTest, numValid)
+    train, test, valid = strategy.generateSplit(dimension, data, corruptChance, numTrain, numTest, numValid)
 
     writeData(outDir, train, 'train')
     writeData(outDir, test, 'test')
@@ -81,6 +84,7 @@ def main(arguments):
             arguments.numTrain,
             arguments.numTest,
             arguments.numValid,
+            arguments.corruptChance,
             arguments.overlapPercent,
             arguments.split)
 
@@ -102,7 +106,7 @@ def main(arguments):
             outDir, arguments.seed,
             arguments.dimension, arguments.datasetNames, 
             arguments.numTrain, arguments.numTest, arguments.numValid,
-            arguments.overlapPercent, arguments.strategy)
+            arguments.corruptChance, arguments.overlapPercent, arguments.strategy)
 
     options = {
         'dimension': arguments.dimension,
@@ -111,6 +115,7 @@ def main(arguments):
         'numTrain': arguments.numTrain,
         'numTest': arguments.numTest,
         'numValid': arguments.numValid,
+        'corruptChance': arguments.corruptChance,
         'overlap': arguments.overlapPercent,
         'splitId': arguments.split,
         'seed': arguments.seed,
@@ -123,6 +128,10 @@ def main(arguments):
 
 def _load_args():
     parser = argparse.ArgumentParser(description = 'Generate custom visual sudoku puzzles.')
+
+    parser.add_argument('--corrupt-chance', dest = 'corruptChance',
+        action = 'store', type = float, default = DEFAULT_CORRUPT_CHANCE,
+        help = 'The chance to continue to make another corruption after one has been made.')
 
     parser.add_argument('--dataset', dest = 'datasetNames',
         action = 'append', default = None,
@@ -192,6 +201,10 @@ def _load_args():
 
     if (arguments.overlapPercent < 0.0):
         print("Overlap percent must be non-negative, got: %f." % (arguments.overlapPercent), file = sys.stderr)
+        sys.exit(2)
+
+    if (arguments.corruptChance < 0.0 or arguments.corruptChance >= 1.0):
+        print("Corrupt chance must be in [0, 1), got: %f." % (arguments.corruptChance), file = sys.stderr)
         sys.exit(2)
 
     if (arguments.seed is None):
