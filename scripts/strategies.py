@@ -35,7 +35,6 @@ class BaseStrategy(abc.ABC):
     def __init_subclass__(cls, **kwargs):
         _strategies.append(cls())
 
-    @abc.abstractmethod
     def validate(self, arguments):
         """
         Validate command-line arguments for this strategy.
@@ -87,10 +86,33 @@ class BaseStrategy(abc.ABC):
 
         return train, test, valid
 
+    def _mergeDatasets(self, data):
+        labels = []
+        trainExamples = {}
+        testExamples = {}
+        validExamples = {}
+
+        for datasetName in data:
+            labels.extend(data[datasetName]['labels'])
+            trainExamples.update(data[datasetName]['train']._examples)
+            testExamples.update(data[datasetName]['test']._examples)
+            validExamples.update(data[datasetName]['valid']._examples)
+
+        labels = list(sorted(set(labels)))
+        trainExamples = datasets.ExampleChooser(trainExamples)
+        testExamples = datasets.ExampleChooser(testExamples)
+        validExamples = datasets.ExampleChooser(validExamples)
+
+        return labels, trainExamples, testExamples, validExamples
+
     def __repr__(self):
         return self.name
 
 class SimpleStrategy(BaseStrategy):
+    """
+    Use a single dataset, and just take the first |dimension| classes.
+    """
+
     def __init__(self):
         super().__init__('simple')
 
@@ -109,6 +131,22 @@ class SimpleStrategy(BaseStrategy):
 
         return self._generateSplit(dimension, numTrain, numTest, numValid, labels,
                 dataset['train'], dataset['test'], dataset['valid'])
+
+class RandomSplitStrategy(BaseStrategy):
+    """
+    Choose |dimension| random classes from all datasets.
+    """
+
+    def __init__(self):
+        super().__init__('split')
+
+    def generateSplit(self, dimension, data, numTrain, numTest, numValid):
+        labels, trainExamples, testExamples, validExamples = self._mergeDatasets(data)
+
+        labels = random.sample(labels, k = dimension)
+
+        return self._generateSplit(dimension, numTrain, numTest, numValid, labels,
+                trainExamples, testExamples, validExamples)
 
 class TransferStrategy(BaseStrategy):
     """

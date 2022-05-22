@@ -102,6 +102,7 @@ def loadMNIST(name = DATASET_MNIST, shuffle = True):
     '''
     Load an MNIST-style dataset (with MNIST_DIMENSION square images).
     Train and test are combined into the same structures.
+    Labels are turned into strings and prepended with the dataset name to avoid conflict with other datasets.
 
     Returns:
         {label: [image, ...], ...}
@@ -117,7 +118,7 @@ def loadMNIST(name = DATASET_MNIST, shuffle = True):
     labels = []
     for label in sorted(set(trainLabels) | set(testLabels)):
         if (name not in LABEL_VALIDATION or LABEL_VALIDATION[name](label)):
-            labels.append(label)
+            labels.append(name + '_' + str(label))
 
     # Remove the depth dimension.
     trainImages = trainImages.reshape((len(trainImages), MNIST_DIMENSION, MNIST_DIMENSION))
@@ -129,12 +130,14 @@ def loadMNIST(name = DATASET_MNIST, shuffle = True):
     # {label: [image, ...], ...}
     examples = {label: [] for label in labels}
     for i in range(len(trainImages)):
-        if (trainLabels[i] in labels):
-            examples[trainLabels[i]].append(trainImages[i])
+        label = name + '_' + str(trainLabels[i])
+        if (label in labels):
+            examples[label].append(trainImages[i])
 
     for i in range(len(testImages)):
-        if (testLabels[i] in labels):
-            examples[testLabels[i]].append(testImages[i])
+        label = name + '_' + str(testLabels[i])
+        if (label in labels):
+            examples[label].append(testImages[i])
 
     if (shuffle):
         for label in labels:
