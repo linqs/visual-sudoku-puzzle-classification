@@ -4,6 +4,8 @@ Handle loading datasets.
 
 import random
 
+import numpy
+
 import util
 
 DATASET_MNIST = 'mnist'
@@ -28,9 +30,19 @@ SIGNIFICANT_DIGITS = 4
 
 TF_DATASET_NAME = {
     DATASET_MNIST: 'mnist',
-    DATASET_EMNIST: 'emnist/letters',
+    DATASET_EMNIST: 'emnist/balanced',
     DATASET_KMNIST: 'kmnist',
     DATASET_FMNIST: 'fashion_mnist',
+}
+
+# Special case validations for classes.
+LABEL_VALIDATION = {
+    DATASET_EMNIST: lambda label: (label > 10)
+}
+
+# Special case transformations on each image.
+IMAGE_TRANSFORMS = {
+    DATASET_EMNIST: lambda image: numpy.transpose(image),
 }
 
 class ExampleChooser(object):
@@ -102,22 +114,27 @@ def loadMNIST(name = DATASET_MNIST, shuffle = True):
     (trainImages, trainLabels) = data['train']
     (testImages, testLabels) = data['test']
 
-    labels = list(sorted(set(trainLabels) | set(testLabels)))
+    labels = []
+    for label in sorted(set(trainLabels) | set(testLabels)):
+        if (name not in LABEL_VALIDATION or LABEL_VALIDATION[name](label)):
+            labels.append(label)
 
     # Remove the depth dimension.
     trainImages = trainImages.reshape((len(trainImages), MNIST_DIMENSION, MNIST_DIMENSION))
     testImages = testImages.reshape((len(testImages), MNIST_DIMENSION, MNIST_DIMENSION))
 
-    trainImages = _normalizeMNISTImages(trainImages)
-    testImages = _normalizeMNISTImages(testImages)
+    trainImages = _normalizeMNISTImages(trainImages, name)
+    testImages = _normalizeMNISTImages(testImages, name)
 
     # {label: [image, ...], ...}
     examples = {label: [] for label in labels}
     for i in range(len(trainImages)):
-        examples[int(trainLabels[i])].append(trainImages[i])
+        if (trainLabels[i] in labels):
+            examples[trainLabels[i]].append(trainImages[i])
 
     for i in range(len(testImages)):
-        examples[int(testLabels[i])].append(testImages[i])
+        if (testLabels[i] in labels):
+            examples[testLabels[i]].append(testImages[i])
 
     if (shuffle):
         for label in labels:
@@ -126,8 +143,12 @@ def loadMNIST(name = DATASET_MNIST, shuffle = True):
 
     return examples, labels
 
-def _normalizeMNISTImages(images):
+def _normalizeMNISTImages(images, datasetName):
     (numImages, width, height) = images.shape
+
+    if (datasetName in IMAGE_TRANSFORMS):
+        for i in range(len(images)):
+            images[i] = IMAGE_TRANSFORMS[datasetName](images[i])
 
     # Flatten out the images into a 1d array.
     images = images.reshape(numImages, width * height)
