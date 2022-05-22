@@ -187,6 +187,20 @@ class RandomPuzzleStrategy(BaseStrategy):
 
         return train, test, valid
 
+class RandomCellStrategy(BaseStrategy):
+    """
+    Use all available classes (more than |dimension|) for every cell.
+    """
+
+    def __init__(self):
+        super().__init__('r_cell')
+
+    def generateSplit(self, dimension, data, numTrain, numTest, numValid):
+        labels, trainExamples, testExamples, validExamples = self._mergeDatasets(data)
+
+        return self._generateSplit(dimension, numTrain, numTest, numValid, labels,
+                trainExamples, testExamples, validExamples)
+
 class TransferStrategy(BaseStrategy):
     """
     A transfer learning strategy where the train and test/valid have different sets of labels.
