@@ -98,11 +98,11 @@ def loadMNIST(name = DATASET_MNIST, shuffle = True):
     # Delay importing tensorflow to avoid waits on already existing datasets.
     import tensorflow_datasets as tfds
 
-    data = tfds.as_numpy(tfds.load(name, batch_size = -1, as_supervised = True))
+    data = tfds.as_numpy(tfds.load(TF_DATASET_NAME[name], batch_size = -1, as_supervised = True))
     (trainImages, trainLabels) = data['train']
     (testImages, testLabels) = data['test']
 
-    labels = list(sorted(set(testLabels)))
+    labels = list(sorted(set(trainLabels) | set(testLabels)))
 
     # Remove the depth dimension.
     trainImages = trainImages.reshape((len(trainImages), MNIST_DIMENSION, MNIST_DIMENSION))
