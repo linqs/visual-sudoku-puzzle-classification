@@ -7,16 +7,31 @@ import random
 import util
 
 DATASET_MNIST = 'mnist'
-DATASET_EMNIST = 'emnist'
+DATASET_EMNIST = 'emnist'  # Only letters.
 DATASET_KMNIST = 'kmnist'
-DATASET_FMNIST = 'fashion_mnist'
+DATASET_FMNIST = 'fmnist'
 
 DATASETS = [DATASET_MNIST, DATASET_EMNIST, DATASET_KMNIST, DATASET_FMNIST]
+
+# Some metadata that we can get without loading the actual data.
+NUM_LABELS = {
+    DATASET_MNIST: 10,
+    DATASET_EMNIST: 26,
+    DATASET_KMNIST: 10,
+    DATASET_FMNIST: 10,
+}
 
 # MNIST images are 28 x 28 = 784.
 MNIST_DIMENSION = 28
 
 SIGNIFICANT_DIGITS = 4
+
+TF_DATASET_NAME = {
+    DATASET_MNIST: 'mnist',
+    DATASET_EMNIST: 'emnist/letters',
+    DATASET_KMNIST: 'kmnist',
+    DATASET_FMNIST: 'fashion_mnist',
+}
 
 class ExampleChooser(object):
     '''
