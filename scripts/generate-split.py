@@ -55,7 +55,7 @@ def writeData(outDir, puzzles, prefix):
     util.writeRows(basePath + '_' + PUZZLE_NOTES_FILENAME, puzzles['notes'])
 
 def generateSplit(outDir, seed,
-        dimension, datasetNames, 
+        dimension, datasetNames,
         numTrain, numTest, numValid,
         corruptChance, overlapPercent, strategy):
     random.seed(seed)
@@ -104,7 +104,7 @@ def main(arguments):
 
     generateSplit(
             outDir, arguments.seed,
-            arguments.dimension, arguments.datasetNames, 
+            arguments.dimension, arguments.datasetNames,
             arguments.numTrain, arguments.numTest, arguments.numValid,
             arguments.corruptChance, arguments.overlapPercent, arguments.strategy)
 
@@ -135,7 +135,7 @@ def _load_args():
 
     parser.add_argument('--dataset', dest = 'datasetNames',
         action = 'append', default = None,
-        help = 'The dataset to use for puzzle cells (can be specified multiple times). Defaults to "%s"' % (DEFAULT_DATASET))
+        help = 'The dataset to use for puzzle cells (can be specified multiple times or with a comma-separated list). Defaults to "%s"' % (DEFAULT_DATASET))
 
     parser.add_argument('--dimension', dest = 'dimension',
         action = 'store', type = int, default = DEFAULT_PUZZLE_DIM,
@@ -183,6 +183,11 @@ def _load_args():
 
     if (arguments.datasetNames is None):
         arguments.datasetNames = [DEFAULT_DATASET]
+
+    flatDatasetNames = []
+    for datasetName in arguments.datasetNames:
+        flatDatasetNames += datasetName.split(',')
+    arguments.datasetNames = flatDatasetNames
 
     if (len(set(arguments.datasetNames)) != len(arguments.datasetNames)):
         print("Duplicate datasetNames specified: %s." % (arguments.datasetNames), file = sys.stderr)

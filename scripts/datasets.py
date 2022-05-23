@@ -57,7 +57,7 @@ class ExampleChooser(object):
 
     # Takes (consumes) the next example for a label.
     def takeExample(self, label):
-        assert(self._nextIndexes[label] < len(self._examples[label]))
+        assert (self._nextIndexes[label] < len(self._examples[label])), 'Label: %s, Next Index: %d, Size: %d' % (label, self._nextIndexes[label], len(self._examples[label]))
 
         image = self._examples[label][self._nextIndexes[label]]
         self._nextIndexes[label] += 1
@@ -78,8 +78,13 @@ def addOverlap(examples, overlapPercent):
         random.shuffle(examples[label])
 
 def fetchData(dimension, datasetName, overlapPercent,
-        numTest, numTrain, numValid):
+        numTrain, numTest, numValid):
     allExamples, allowedLabels = loadMNIST(datasetName)
+
+    requiredExamplesPerLabel = dimension * (numTrain + numTest + numValid)
+    for label in allExamples:
+        if (len(allExamples[label]) < requiredExamplesPerLabel):
+            raise RuntimeError("Label (%s) from %s does not have enough examples. Want %d, have %d." % (str(label), datasetName, requiredExamplesPerLabel, len(allExamples[label])))
 
     trainExamples = {}
     testExamples = {}
@@ -88,7 +93,7 @@ def fetchData(dimension, datasetName, overlapPercent,
     usedExamples = 0
 
     for (examples, puzzleCount) in [(trainExamples, numTrain), (testExamples, numTest), (validExamples, numValid)]:
-        exampleCount = puzzleCount * (dimension ** 2)
+        exampleCount = puzzleCount * dimension
         for label in allExamples:
             examples[label] = allExamples[label][usedExamples:(usedExamples + exampleCount)]
         usedExamples += exampleCount

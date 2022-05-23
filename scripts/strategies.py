@@ -257,6 +257,6 @@ class TransferStrategy(BaseStrategy):
         testLabels = labels[dimension:(dimension * 2)]
 
         train, _, _ = self._generateSplit(dimension, corruptChance, numTrain, 0, 0, trainLabels, dataset['train'], None, None)
-        _, test, valid = self._generateSplit(dimension, 0, numTest, numValid, testLabels, None, dataset['test'], dataset['valid'])
+        _, test, valid = self._generateSplit(dimension, corruptChance, 0, numTest, numValid, testLabels, None, dataset['test'], dataset['valid'])
 
         return train, test, valid
