@@ -62,11 +62,11 @@ def main(arguments):
     matplotlib.pyplot.imshow(puzzle, cmap = 'gray_r')
     matplotlib.pyplot.axis('off')
 
-    if (arguments.show):
-        matplotlib.pyplot.show()
-
     if (arguments.outPath):
         matplotlib.pyplot.savefig(arguments.outPath)
+
+    if (arguments.show):
+        matplotlib.pyplot.show()
 
 def _load_args():
     parser = argparse.ArgumentParser(description = 'Generate an image for a puzzle in *_puzzle_pixels.txt file.')

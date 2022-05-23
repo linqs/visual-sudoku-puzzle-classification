@@ -7,7 +7,8 @@ readonly SETUP_SCRIPT="${THIS_DIR}/generate-split.py"
 
 readonly NUM_SPLITS='11'
 
-readonly DIMENSIONS='4 9'
+# readonly DIMENSIONS='4 9'
+readonly DIMENSIONS='4'
 readonly NUM_TRAIN_PUZZLES='001 002 005 010 020 050 100'
 readonly NUM_TEST_VALID_PUZZLE='100'
 readonly OVERLAP_PERCENTS='0.00 0.50 1.00 2.00'
