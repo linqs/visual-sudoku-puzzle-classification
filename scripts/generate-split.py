@@ -25,7 +25,7 @@ DEFAULT_NUM_TEST = 100
 DEFAULT_NUM_VALID = 100
 DEFAULT_OUT_DIR = 'data'
 DEFAULT_OVERLAP_PERCENT = 0.0
-DEFAULT_SPLIT = '00'
+DEFAULT_SPLIT = '01'
 DEFAULT_TRAIN_PERCENT = 0.5
 
 SUBPATH_FORMAT = os.path.join('dimension::{:01d}', 'datasets::{:s}', 'strategy::{:s}',
