@@ -185,9 +185,21 @@ class RandomPuzzleStrategy(BaseStrategy):
             [valid, numValid, validExamples],
         ]
 
-        for (split, count, examples) in splits:
-            for i in range(count):
-                labels = random.sample(baseLabels, k = dimension)
+        # Reuse the same pool of labels from train for test/valid.
+        seenLabels = set()
+
+        for i in range(len(splits)):
+            (split, count, examples) = splits[i]
+
+            if (i != 0):
+                seenLabels = list(sorted(seenLabels))
+
+            for _ in range(count):
+                if (i == 0):
+                    labels = random.sample(baseLabels, k = dimension)
+                    seenLabels.update(set(labels))
+                else:
+                    labels = random.sample(seenLabels, k = dimension)
 
                 # Generate a correct puzzle.
 
@@ -218,10 +230,59 @@ class RandomCellStrategy(BaseStrategy):
         super().__init__('r_cell')
 
     def generateSplit(self, dimension, data, corruptChance, numTrain, numTest, numValid):
-        labels, trainExamples, testExamples, validExamples = self._mergeDatasets(data)
+        baseLabels, trainExamples, testExamples, validExamples = self._mergeDatasets(data)
 
-        return self._generateSplit(dimension, corruptChance, numTrain, numTest, numValid, labels,
-                trainExamples, testExamples, validExamples)
+        train = {
+            'images': [],
+            'cellLabels': [],
+            'labels': [],
+            'notes': [],
+        }
+        test = copy.deepcopy(train)
+        valid = copy.deepcopy(train)
+
+        splits = [
+            [train, numTrain, trainExamples],
+            [test, numTest, testExamples],
+            [valid, numValid, validExamples],
+        ]
+
+        # Reuse the same pool of labels from train for test/valid.
+        seenLabels = set()
+
+        for i in range(len(splits)):
+            (split, count, examples) = splits[i]
+
+            if (i == 0):
+                labels = baseLabels
+            else:
+                labels = list(sorted(seenLabels))
+
+            for _ in range(count):
+                # Generate a correct puzzle.
+
+                puzzleImages, puzzleCellLabels = puzzles.generatePuzzle(dimension, labels, examples)
+
+                split['images'].append(puzzleImages)
+                split['cellLabels'].append(puzzleCellLabels)
+                split['labels'].append(puzzles.PUZZLE_LABEL_CORRECT)
+                split['notes'].append([puzzles.PUZZLE_NOTE_CORRRECT])
+
+                # Corrupt a puzzle.
+
+                corruptImages, corruptCellLabels, corruptNote = puzzles.corruptPuzzle(dimension, labels, examples, puzzleImages, puzzleCellLabels, corruptChance)
+
+                split['images'].append(corruptImages)
+                split['cellLabels'].append(corruptCellLabels)
+                split['labels'].append(puzzles.PUZZLE_LABEL_INCORRECT)
+                split['notes'].append([corruptNote])
+
+                if (i == 0):
+                    # Keep track of all the labels we have seen.
+                    seenLabels.update(set([label for row in puzzleCellLabels for label in row]))
+                    seenLabels.update(set([label for row in corruptCellLabels for label in row]))
+
+        return train, test, valid
 
 class TransferStrategy(BaseStrategy):
     """
