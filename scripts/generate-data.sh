@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # Create all the splits.
+# Warning: this will create more than a TB of data, it is recommended that you adjust the constants to only generate what you need.
 
 readonly THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 readonly SETUP_SCRIPT="${THIS_DIR}/generate-split.py"
 
 readonly NUM_SPLITS='11'
 
-# readonly DIMENSIONS='4 9'
-readonly DIMENSIONS='4'
+readonly DIMENSIONS='4 9'
 readonly NUM_TRAIN_PUZZLES='001 002 005 010 020 030 040 050 100'
 readonly NUM_TEST_VALID_PUZZLE='100'
 readonly OVERLAP_PERCENTS='0.00 0.50 1.00 2.00'
@@ -54,4 +54,4 @@ function main() {
     done
 }
 
-main "$@"
+[[ "${BASH_SOURCE[0]}" == "${0}" ]] && main "$@"
