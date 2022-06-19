@@ -16,14 +16,23 @@ readonly OVERLAP_PERCENTS='0.00 0.50 1.00 2.00'
 readonly STRATEGIES='simple r_split r_puzzle r_cell transfer'
 
 readonly SINGLE_DATASETS='mnist emnist fmnist kmnist'
+readonly LARGE_DATASETS='emnist'
 readonly ALL_DATASETS='mnist emnist fmnist kmnist mnist,emnist mnist,fmnist mnist,kmnist emnist,fmnist emnist,kmnist fmnist,kmnist emnist,fmnist,kmnist mnist,fmnist,kmnist mnist,emnist,fmnist mnist,emnist,fmnist,kmnist'
 
+# {"${dim}::${strategy}": datasets, ...}
 declare -A ALLOWED_DATASETS
-ALLOWED_DATASETS['simple']="${SINGLE_DATASETS}"
-ALLOWED_DATASETS['r_split']="${ALL_DATASETS}"
-ALLOWED_DATASETS['r_puzzle']="${ALL_DATASETS}"
-ALLOWED_DATASETS['r_cell']="${ALL_DATASETS}"
-ALLOWED_DATASETS['transfer']="${SINGLE_DATASETS}"
+
+ALLOWED_DATASETS['4::simple']="${SINGLE_DATASETS}"
+ALLOWED_DATASETS['4::r_split']="${ALL_DATASETS}"
+ALLOWED_DATASETS['4::r_puzzle']="${ALL_DATASETS}"
+ALLOWED_DATASETS['4::r_cell']="${ALL_DATASETS}"
+ALLOWED_DATASETS['4::transfer']="${SINGLE_DATASETS}"
+
+ALLOWED_DATASETS['9::simple']="${SINGLE_DATASETS}"
+ALLOWED_DATASETS['9::r_split']="${ALL_DATASETS}"
+ALLOWED_DATASETS['9::r_puzzle']="${ALL_DATASETS}"
+ALLOWED_DATASETS['9::r_cell']="${ALL_DATASETS}"
+ALLOWED_DATASETS['9::transfer']="${LARGE_DATASETS}"
 
 function main() {
 	set -e
@@ -35,7 +44,7 @@ function main() {
                 for numTestValidPuzzles in ${NUM_TEST_VALID_PUZZLE} ; do
                     for overlapPercent in ${OVERLAP_PERCENTS} ; do
                         for strategy in ${STRATEGIES} ; do
-                            for datasets in ${ALLOWED_DATASETS[${strategy}]} ; do
+                            for datasets in ${ALLOWED_DATASETS["${dimension}::${strategy}"]} ; do
                                 "${SETUP_SCRIPT}" \
                                     --dataset "${datasets}" \
                                     --dimension "${dimension}" \
