@@ -144,9 +144,11 @@ def corruptPuzzle(dimension, labels, exampleChooser, originalImages, originalCel
         corruptCellLabels = copy.deepcopy(originalCellLabels)
 
         if (corruptMethod):
-            return corruptPuzzleByReplacement(dimension, labels, exampleChooser, corruptImages, corruptCellLabels, corruptionChance)
+            corruptImages, corruptCellLabels, corruptNote = corruptPuzzleByReplacement(dimension, labels, exampleChooser, corruptImages, corruptCellLabels, corruptionChance)
         else:
-            return corruptPuzzleBySwap(dimension, labels, exampleChooser, corruptImages, corruptCellLabels, corruptionChance)
+            corruptImages, corruptCellLabels, corruptNote = corruptPuzzleBySwap(dimension, labels, exampleChooser, corruptImages, corruptCellLabels, corruptionChance)
+
+    return corruptImages, corruptCellLabels, corruptNote
 
 def corruptPuzzleBySwap(dimension, labels, exampleChooser, corruptImages, corruptCellLabels, corruptionChance):
     """
