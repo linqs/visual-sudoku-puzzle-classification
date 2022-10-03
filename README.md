@@ -6,6 +6,8 @@ This repository contains the code necessary to create the collective neuro-symbo
 ## Pre-Generated Data
 
 Pre-generated data is made available with 4x4 and 9x9 puzzles.
+11 splits are provided for each configuration.
+The first 10 splits (01 - 10) are to be scored, while the final split (11) is free to be used as the experimenter sees fit.
 For convenience, the data has been split up by size, task, and datasets.
 
 All the data is available in this directory:
