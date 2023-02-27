@@ -22,6 +22,13 @@ Shortcuts to the basic task datasets are provided here:
 | FMNIST      | [Basic 4x4 FMNIST](https://linqs-data.soe.ucsc.edu/public/datasets/ViSudo-PC/v01/ViSudo-PC_dimension::4_datasets::fmnist_strategy::simple.zip) | [Basic 9x9 FMNIST](https://linqs-data.soe.ucsc.edu/public/datasets/ViSudo-PC/v01/ViSudo-PC_dimension::9_datasets::fmnist_strategy::simple.zip) |
 | KMNIST      | [Basic 4x4 KMNIST](https://linqs-data.soe.ucsc.edu/public/datasets/ViSudo-PC/v01/ViSudo-PC_dimension::4_datasets::kmnist_strategy::simple.zip) | [Basic 9x9 KMNIST](https://linqs-data.soe.ucsc.edu/public/datasets/ViSudo-PC/v01/ViSudo-PC_dimension::9_datasets::kmnist_strategy::simple.zip) |
 
+We also provide some sample datasets that only cover one specific setting and split:
+
+| Has Overlap? | 4x4 | 9x9 |
+|-------------|-----|-----|
+| Without Overlap | [Sample 4x4 No Overlap](https://linqs-data.soe.ucsc.edu/public/datasets/ViSudo-PC/v01/sample_4x4.zip) | [Sample 9x9 No Overlap](https://linqs-data.soe.ucsc.edu/public/datasets/ViSudo-PC/v01/sample_9x9.zip) |
+| With Overlap | [Sample 4x4 Overlap](https://linqs-data.soe.ucsc.edu/public/datasets/ViSudo-PC/v01/sample_4x4_overlap.zip) | [Sample 9x9 Overlap](https://linqs-data.soe.ucsc.edu/public/datasets/ViSudo-PC/v01/sample_9x9_overlap.zip) |
+
 ## Generating Data
 
 The `./scripts/generate-split.py` script can be used to generate a split of puzzles.
@@ -40,6 +47,6 @@ To reference this work, please cite:
     booktitle = {International Workshop on Neural-Symbolic Learning and Reasoning (NeSy)},
     year = {2022},
     _publisher = {CEUR},
-    address = { Windsor, United Kingdom},
+    address = {Windsor, United Kingdom},
 }
 ```
